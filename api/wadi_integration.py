@@ -3,20 +3,45 @@ WADI Dataset Integration for ICS Cybersecurity Dashboard
 Singapore University of Technology and Design (SUTD) Water Distribution Dataset
 """
 
-import pandas as pd
-import numpy as np
+try:
+    import pandas as pd
+    pandas_available = True
+except ImportError:
+    pandas_available = False
+    print("Warning: pandas not available")
+
+try:
+    import numpy as np
+    numpy_available = True
+except ImportError:
+    numpy_available = False
+    print("Warning: numpy not available")
+
 from datetime import datetime, timedelta
 import os
-from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import IsolationForest
+import random
+import math
+
+# Optional scikit-learn imports
+try:
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.ensemble import IsolationForest
+    sklearn_available = True
+except ImportError:
+    sklearn_available = False
+    print("Warning: scikit-learn not available")
 
 class WADIDataConnector:
     """Specialized connector for WADI (Water Distribution) dataset"""
     
     def __init__(self):
         self.dataset_path = 'data/wadi/'
-        self.scaler = StandardScaler()
-        self.anomaly_detector = IsolationForest(contamination=0.1, random_state=42)
+        if sklearn_available:
+            self.scaler = StandardScaler()
+            self.anomaly_detector = IsolationForest(contamination=0.1, random_state=42)
+        else:
+            self.scaler = None
+            self.anomaly_detector = None
         self.sensor_mapping = self.get_wadi_sensor_mapping()
         self.attack_labels = {}
         
@@ -72,6 +97,10 @@ class WADIDataConnector:
     
     def load_wadi_data(self, attack_type='normal'):
         """Load WADI dataset files"""
+        if not pandas_available:
+            print("pandas not available, cannot load WADI data")
+            return None
+            
         try:
             if attack_type == 'normal':
                 # Load normal operation data
@@ -96,6 +125,9 @@ class WADIDataConnector:
     
     def process_wadi_dataframe(self, df, has_attacks=False):
         """Process raw WADI dataframe into dashboard format"""
+        if not pandas_available:
+            return None
+            
         try:
             # Handle timestamp column (different formats in WADI)
             timestamp_cols = ['Timestamp', 'Date Time', 'DateTime', 'Time']
@@ -144,24 +176,27 @@ class WADIDataConnector:
         if df is None:
             df = self.load_wadi_data('attack')  # Fallback to attack data
         
-        if df is None or df.empty:
+        if df is None or (pandas_available and df.empty):
             print("⚠️ No WADI data found, using simulated data")
             return self.get_simulated_wadi_data(hours_back)
         
         try:
             # Get recent data
-            end_time = df['timestamp'].max()
-            start_time = end_time - timedelta(hours=hours_back)
-            recent_data = df[df['timestamp'] >= start_time].copy()
-            
-            if recent_data.empty:
-                # Use last available data if no recent data
-                recent_data = df.tail(100).copy()
-            
-            # Convert sensor readings to "power consumption" equivalent
-            power_data = self.convert_sensors_to_power(recent_data)
-            
-            return power_data[-10:]  # Return last 10 data points
+            if pandas_available:
+                end_time = df['timestamp'].max()
+                start_time = end_time - timedelta(hours=hours_back)
+                recent_data = df[df['timestamp'] >= start_time].copy()
+                
+                if recent_data.empty:
+                    # Use last available data if no recent data
+                    recent_data = df.tail(100).copy()
+                
+                # Convert sensor readings to "power consumption" equivalent
+                power_data = self.convert_sensors_to_power(recent_data)
+                
+                return power_data[-10:]  # Return last 10 data points
+            else:
+                return self.get_simulated_wadi_data(hours_back)
             
         except Exception as e:
             print(f"Error processing WADI data: {e}")
@@ -169,6 +204,9 @@ class WADIDataConnector:
     
     def convert_sensors_to_power(self, df):
         """Convert WADI sensor readings to power consumption equivalent"""
+        if not pandas_available:
+            return self.get_simulated_wadi_data(1)
+            
         dashboard_data = []
         
         # Select key sensors for power calculation
@@ -177,47 +215,51 @@ class WADIDataConnector:
         
         if not available_sensors:
             # If no key sensors, use any available numeric columns
-            numeric_cols = df.select_dtypes(include=[np.number]).columns
+            numeric_cols = df.select_dtypes(include=[float, int]).columns if pandas_available else []
             available_sensors = [col for col in numeric_cols if col != 'is_attack'][:5]
         
         print(f"🔍 Using WADI sensors for power calculation: {available_sensors}")
         
         # Group data into time intervals
         df['time_interval'] = df['timestamp'].dt.floor('5min')
-        grouped = df.groupby('time_interval').agg({
-            **{sensor: 'mean' for sensor in available_sensors},
-            'is_attack': 'any'
-        }).reset_index()
+        agg_dict = {sensor: 'mean' for sensor in available_sensors}
+        agg_dict['is_attack'] = 'any'
+        grouped = df.groupby('time_interval').agg(agg_dict).reset_index()
         
         for _, row in grouped.iterrows():
             # Calculate equivalent "power consumption" from sensor readings
             power_value = 0
             
             for sensor in available_sensors:
-                if sensor in row and not pd.isna(row[sensor]):
+                if sensor in row and not (pandas_available and pd.isna(row[sensor])):
+                    sensor_val = row[sensor] if row[sensor] is not None else 0
                     # Convert sensor readings to power equivalent
                     if 'FIT' in sensor:  # Flow sensors
-                        power_value += abs(row[sensor]) * 10  # Flow contributes to power
+                        power_value += abs(sensor_val) * 10  # Flow contributes to power
                     elif 'P_' in sensor:  # Pump states
-                        power_value += row[sensor] * 100  # Pumps consume significant power
+                        power_value += sensor_val * 100  # Pumps consume significant power
                     elif 'LIT' in sensor:  # Level sensors
-                        power_value += abs(row[sensor]) * 5  # Level affects pump power
+                        power_value += abs(sensor_val) * 5  # Level affects pump power
                     elif 'PIT' in sensor:  # Pressure sensors
-                        power_value += abs(row[sensor]) * 8  # Pressure affects power
+                        power_value += abs(sensor_val) * 8  # Pressure affects power
                     else:
-                        power_value += abs(row[sensor]) * 2  # Other sensors
+                        power_value += abs(sensor_val) * 2  # Other sensors
             
             # Normalize to realistic power range (500-1200 kW)
             normalized_power = 500 + (power_value % 700)
             
             # Check for anomalies
-            is_anomaly = row['is_attack'] if 'is_attack' in row else False
+            is_anomaly = row.get('is_attack', False) if 'is_attack' in row else False
             anomaly_power = normalized_power * 1.3 if is_anomaly else None
+            
+            # Calculate moving average for normal power
+            recent_powers = [item['power'] for item in dashboard_data[-5:]] if dashboard_data else [normalized_power]
+            avg_power = sum(recent_powers) / len(recent_powers)
             
             dashboard_data.append({
                 'time': row['time_interval'].strftime('%H:%M'),
                 'power': round(normalized_power, 1),
-                'normal': round(np.mean([item['power'] for item in dashboard_data[-5:]]) if dashboard_data else normalized_power, 1),
+                'normal': round(avg_power, 1),
                 'anomaly': round(anomaly_power, 1) if anomaly_power else None
             })
         
@@ -233,22 +275,22 @@ class WADIDataConnector:
                 return {
                     'timestamp': datetime.now().isoformat(),
                     'power_consumption': latest['power'],
-                    'network_traffic': np.random.normalvariate(60, 15),
-                    'temperature': np.random.normalvariate(72, 5),
-                    'pressure': np.random.normalvariate(14.7, 0.5),
-                    'flow_rate': np.random.normalvariate(150, 20),
+                    'network_traffic': random.uniform(45, 75),
+                    'temperature': random.uniform(68, 76),
+                    'pressure': random.uniform(14.2, 15.2),
+                    'flow_rate': random.uniform(130, 170),
                     'sensor_readings': {
-                        f'sensor_{i}': np.random.normalvariate(50, 10) for i in range(1, 13)
+                        f'sensor_{i}': random.uniform(40, 60) for i in range(1, 13)
                     },
                     'system_status': {
-                        'cpu_usage': np.random.normalvariate(35, 10),
-                        'memory_usage': np.random.normalvariate(65, 15),
-                        'disk_usage': np.random.normalvariate(40, 8)
+                        'cpu_usage': random.uniform(25, 45),
+                        'memory_usage': random.uniform(50, 80),
+                        'disk_usage': random.uniform(30, 50)
                     },
                     'network_metrics': {
-                        'latency': np.random.normalvariate(15, 5),
-                        'packet_loss': np.random.uniform(0, 0.5),
-                        'bandwidth_utilization': np.random.normalvariate(45, 12)
+                        'latency': random.uniform(10, 20),
+                        'packet_loss': random.uniform(0, 0.5),
+                        'bandwidth_utilization': random.uniform(35, 55)
                     }
                 }
         except Exception as e:
@@ -265,7 +307,7 @@ class WADIDataConnector:
             time_point = base_time + timedelta(minutes=i*6)
             
             # Simulate water distribution system power consumption
-            base_power = 650 + np.random.uniform(-50, 50)  # Water systems typically 600-700 kW
+            base_power = 650 + random.uniform(-50, 50)  # Water systems typically 600-700 kW
             
             # Add realistic variations based on water demand patterns
             hour = time_point.hour
@@ -275,14 +317,14 @@ class WADIDataConnector:
                 base_power -= 80
             
             # Simulate cyber attack anomalies (WADI-style)
-            if np.random.random() > 0.85:  # 15% chance of attack simulation
+            if random.random() > 0.85:  # 15% chance of attack simulation
                 anomaly_power = base_power * 1.4  # Significant deviation during attacks
             else:
                 anomaly_power = None
                 
             data.append({
                 'time': time_point.strftime('%H:%M'),
-                'power': round(base_power + np.random.uniform(-20, 20)),
+                'power': round(base_power + random.uniform(-20, 20)),
                 'normal': round(base_power),
                 'anomaly': round(anomaly_power) if anomaly_power else None
             })

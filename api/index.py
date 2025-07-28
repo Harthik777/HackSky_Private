@@ -1,9 +1,16 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-import numpy as np
+try:
+    import numpy as np
+    numpy_available = True
+except ImportError:
+    numpy_available = False
+    print("Warning: NumPy not available, using Python random")
+    
 import json
-from datetime import datetime, timedelta
 import random
+import math
+from datetime import datetime, timedelta
 import os
 import sys
 
@@ -27,6 +34,32 @@ except ImportError:
 
 app = Flask(__name__)
 CORS(app)
+
+# Helper functions for when numpy is not available
+def normalvariate_fallback(mu, sigma):
+    """Fallback normal distribution using Python's random and math"""
+    # Box-Muller transform
+    if not hasattr(normalvariate_fallback, 'spare'):
+        normalvariate_fallback.spare = None
+    
+    if normalvariate_fallback.spare is not None:
+        result = normalvariate_fallback.spare
+        normalvariate_fallback.spare = None
+        return mu + sigma * result
+    
+    u = random.uniform(0, 1)
+    v = random.uniform(0, 1)
+    z = math.sqrt(-2 * math.log(u)) * math.cos(2 * math.pi * v)
+    normalvariate_fallback.spare = math.sqrt(-2 * math.log(u)) * math.sin(2 * math.pi * v)
+    
+    return mu + sigma * z
+
+def random_normal(mu, sigma):
+    """Use numpy if available, otherwise fallback"""
+    if numpy_available:
+        return np.random.normalvariate(mu, sigma)
+    else:
+        return normalvariate_fallback(mu, sigma)
 
 # Enhanced ICS Monitor with WADI support
 class ICSMonitor:
@@ -113,29 +146,29 @@ class ICSMonitor:
         anomaly_chance = 0.05  # 5% chance of anomaly
         is_anomaly = random.random() < anomaly_chance
         
-        base_power = 45 + random.normalvariate(0, 8)
+        base_power = 45 + random_normal(0, 8)
         if is_anomaly:
             base_power += random.choice([-25, 25])  # Significant deviation
             
         data = {
             'timestamp': now.isoformat(),
             'power_consumption': max(0, base_power),
-            'network_traffic': random.normalvariate(60, 15),
-            'temperature': random.normalvariate(72, 5),
-            'pressure': random.normalvariate(14.7, 0.5),
-            'flow_rate': random.normalvariate(150, 20),
+            'network_traffic': random_normal(60, 15),
+            'temperature': random_normal(72, 5),
+            'pressure': random_normal(14.7, 0.5),
+            'flow_rate': random_normal(150, 20),
             'sensor_readings': {
-                f'sensor_{i}': random.normalvariate(50, 10) for i in range(1, 13)
+                f'sensor_{i}': random_normal(50, 10) for i in range(1, 13)
             },
             'system_status': {
-                'cpu_usage': random.normalvariate(35, 10),
-                'memory_usage': random.normalvariate(65, 15),
-                'disk_usage': random.normalvariate(40, 8)
+                'cpu_usage': random_normal(35, 10),
+                'memory_usage': random_normal(65, 15),
+                'disk_usage': random_normal(40, 8)
             },
             'network_metrics': {
-                'latency': random.normalvariate(15, 5),
+                'latency': random_normal(15, 5),
                 'packet_loss': random.uniform(0, 0.5),
-                'bandwidth_utilization': random.normalvariate(45, 12)
+                'bandwidth_utilization': random_normal(45, 12)
             }
         }
         
@@ -190,7 +223,7 @@ def get_power_data():
                 current_data = monitor.get_real_time_data()
                 power = current_data.get('power_consumption', 45)
             else:
-                power = 45 + random.normalvariate(0, 8)
+                power = 45 + random_normal(0, 8)
                 # Add some anomalies
                 if random.random() < 0.08:
                     power += random.choice([-20, 20])
@@ -198,8 +231,8 @@ def get_power_data():
             data_points.append({
                 'timestamp': timestamp.strftime('%H:%M'),
                 'power': max(0, round(power, 2)),
-                'temperature': round(random.normalvariate(72, 5), 1),
-                'network': round(random.normalvariate(60, 15), 1)
+                'temperature': round(random_normal(72, 5), 1),
+                'network': round(random_normal(60, 15), 1)
             })
         
         return jsonify(data_points)
