@@ -2,28 +2,20 @@
 node_modules/
 */node_modules/
 
-<<<<<<< HEAD
 # Large datasets (>100MB)
 ics-dashboard/data/wadi/*.csv
 WADI_14days_new.csv
 WADI_attackdataLABLE.csv
 
-# Python virtual environment
-.venv/
-__pycache__/
-=======
 # Build outputs
 dist/
 build/
 .next/
 out/
->>>>>>> f1a5d359c4fe404b285f15b46203ef699a3acc64
 
 # Environment files
 .env
 .env.local
-<<<<<<< HEAD
-=======
 .env.production
 .env.development
 *.env
@@ -37,26 +29,17 @@ __pycache__/
 env/
 venv/
 .venv/
->>>>>>> f1a5d359c4fe404b285f15b46203ef699a3acc64
 
 # IDE files
 .vscode/
 .idea/
-<<<<<<< HEAD
-=======
 *.swp
 *.swo
 *~
->>>>>>> f1a5d359c4fe404b285f15b46203ef699a3acc64
 
 # OS files
 .DS_Store
 Thumbs.db
-<<<<<<< HEAD
-
-# Logs
-*.log 
-=======
 desktop.ini
 
 # Logs
@@ -91,12 +74,7 @@ coverage/
 tmp/
 temp/
 
-# Large datasets (uncomment to exclude)
-# data/wadi/
-# *.csv
-
 # Model files (uncomment if models are too large)
 # models/
 # *.pkl
 # *.h5
->>>>>>> f1a5d359c4fe404b285f15b46203ef699a3acc64
