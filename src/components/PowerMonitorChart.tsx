@@ -5,33 +5,37 @@ import { Activity, TrendingUp } from 'lucide-react';
 const PowerMonitorChart: React.FC = () => {
   const [data, setData] = useState<any[]>([]);
   const [currentPower, setCurrentPower] = useState(0);
-  const [isConnected, setIsConnected] = useState(false);
+  const [dataSource, setDataSource] = useState('Simulated'); // New state
 
-  // Fetch real data from backend API
-  const fetchPowerData = async () => {
+  const fetchData = async () => {
     try {
-      const response = await fetch('/api/power-data');
-      const realData = await response.json();
-      
-      if (realData && realData.length > 0) {
-        setData(realData);
-        setCurrentPower(realData[realData.length - 1]?.power || 0);
-        setIsConnected(true);
+      // Fetch power data
+      const powerResponse = await fetch('/api/power-data');
+      const powerData = await powerResponse.json();
+      if (powerData && powerData.length > 0) {
+        setData(powerData);
+        setCurrentPower(powerData[powerData.length - 1]?.power || 0);
       }
+
+      // Fetch data source info
+      const sourceResponse = await fetch('/api/data-source');
+      const sourceData = await sourceResponse.json();
+      setDataSource(sourceData.dataset_type || 'Simulated');
+
     } catch (error) {
-      console.error('Error fetching real data:', error);
-      setIsConnected(false);
+      console.error('Error fetching data:', error);
+      setDataSource('Simulated');
     }
   };
 
   // Real-time data updates from backend
   useEffect(() => {
     // Initial fetch
-    fetchPowerData();
+    fetchData();
     
     // Set up interval for real-time updates
     const interval = setInterval(() => {
-      fetchPowerData();
+      fetchData();
     }, 3000);
 
     return () => clearInterval(interval);
@@ -132,10 +136,10 @@ const PowerMonitorChart: React.FC = () => {
             <span className="text-gray-300 text-sm">Anomalies</span>
           </div>
         </div>
-        <div className={`flex items-center space-x-2 ${isConnected ? 'text-green-400' : 'text-yellow-400'}`}>
+        <div className={`flex items-center space-x-2 ${dataSource !== 'Simulated' ? 'text-green-400' : 'text-yellow-400'}`}>
           <TrendingUp className="w-4 h-4" />
           <span className="text-sm">
-            {isConnected ? '📊 Using Real Data' : '⚠️ Simulated Data'}
+            {dataSource !== 'Simulated' ? `📊 Using ${dataSource}` : '⚠️ Simulated Data'}
           </span>
         </div>
       </div>

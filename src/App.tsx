@@ -15,32 +15,47 @@ interface Alert {
 }
 
 function App() {
-  const [alerts, setAlerts] = useState<Alert[]>([
-    {
-      id: 1,
-      type: 'critical' as const,
-      message: 'Unusual power spike detected on Motor Controller #3',
-      timestamp: new Date(),
-      system: 'Motor Control Unit'
-    },
-    {
-      id: 2,
-      type: 'warning' as const,
-      message: 'Network latency increased on PLC-001',
-      timestamp: new Date(Date.now() - 300000),
-      system: 'PLC Network'
-    }
-  ]);
-
+  // Initialize with empty or loading states
+  const [alerts, setAlerts] = useState<Alert[]>([]);
   const [systemHealth, setSystemHealth] = useState({
-    overall: 'good',
+    overall: 'loading',
     components: {
-      nilm: 'online',
-      ml_models: 'online',
-      data_collection: 'warning',
-      alert_system: 'online'
+      nilm: 'loading',
+      ml_models: 'loading',
+      data_collection: 'loading',
+      alert_system: 'loading'
     }
   });
+
+  // Fetch initial data on component mount
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      // Fetch Alerts
+      try {
+        const alertsResponse = await fetch('/api/alerts');
+        const alertsData = await alertsResponse.json();
+        // Convert timestamp strings to Date objects
+        const formattedAlerts = alertsData.map((alert: any) => ({
+          ...alert,
+          timestamp: new Date(alert.timestamp)
+        }));
+        setAlerts(formattedAlerts);
+      } catch (error) {
+        console.error("Failed to fetch alerts:", error);
+      }
+
+      // Fetch System Status
+      try {
+        const statusResponse = await fetch('/api/system-status');
+        const statusData = await statusResponse.json();
+        setSystemHealth(statusData);
+      } catch (error) {
+        console.error("Failed to fetch system status:", error);
+      }
+    };
+
+    fetchInitialData();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-900">
