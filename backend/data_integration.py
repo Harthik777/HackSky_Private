@@ -121,7 +121,11 @@ class RealDataConnector:
         # Try different data sources in order of preference
         
         # Option 1: Load from CSV file (most common for hackathons)
-        csv_file = 'data/power_consumption.csv'
+        # --- FIX START: Create absolute path ---
+        script_dir = os.path.dirname(__file__)
+        project_root = os.path.abspath(os.path.join(script_dir, '..'))
+        csv_file = os.path.join(project_root, 'data', 'power_consumption.csv')
+        # --- FIX END ---
         if os.path.exists(csv_file):
             df = self.load_csv_data(csv_file)
             if df is not None:

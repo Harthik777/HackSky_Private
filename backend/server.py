@@ -64,14 +64,19 @@ class ICSMonitor:
         
     def detect_dataset_type(self):
         """Detect which dataset is available"""
+        # --- FIX START: Create absolute paths ---
+        script_dir = os.path.dirname(__file__)
+        project_root = os.path.abspath(os.path.join(script_dir, '..'))
+        # --- FIX END ---
+        
         if self.wadi_connector:
-            wadi_path = '../data/wadi/'
+            wadi_path = os.path.join(project_root, 'data', 'wadi')
             if os.path.exists(os.path.join(wadi_path, 'WADI_14days.csv')) or \
                os.path.exists(os.path.join(wadi_path, 'WADI_attackdata.csv')):
                 return 'WADI'
         
         if self.data_connector:
-            csv_path = '../data/power_consumption.csv'
+            csv_path = os.path.join(project_root, 'data', 'power_consumption.csv')
             if os.path.exists(csv_path):
                 return 'Generic CSV'
         
