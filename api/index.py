@@ -175,19 +175,59 @@ class handler(BaseHTTPRequestHandler):
         return sorted(alerts, key=lambda x: x['timestamp'], reverse=True)
     
     def _get_attack_analysis(self):
-        """Generate simulated attack analysis"""
+        """Generate simulated attack analysis with the correct format for frontend"""
+        
+        # Create an array of attack type objects, as the frontend expects
+        attack_types_list = [
+            {'type': 'Flow Manipulation', 'probability': random.randint(10, 25), 'detected': random.randint(0, 5)},
+            {'type': 'Pressure Attack', 'probability': random.randint(5, 20), 'detected': random.randint(0, 3)},
+            {'type': 'Level Sensor Spoofing', 'probability': random.randint(5, 15), 'detected': random.randint(0, 2)},
+            {'type': 'Pump Control Attack', 'probability': random.randint(10, 30), 'detected': random.randint(0, 4)},
+            {'type': 'Quality Tampering', 'probability': random.randint(1, 10), 'detected': random.randint(0, 1)},
+            {'type': 'Network Intrusion', 'probability': random.randint(7, 18), 'detected': random.randint(0, 3)},
+            {'type': 'HMI Manipulation', 'probability': random.randint(3, 12), 'detected': random.randint(0, 2)}
+        ]
+        random.shuffle(attack_types_list)
+
+        # Generate dynamic model metrics
+        confidence = round(random.uniform(92, 98), 1)
+        
+        # Dynamic threat distribution based on detected attacks
+        total_detections = sum(attack['detected'] for attack in attack_types_list)
+        if total_detections > 8:
+            threat_dist = [
+                {'name': 'Normal', 'value': 70, 'color': '#10B981'},
+                {'name': 'Suspicious', 'value': 22, 'color': '#F59E0B'},
+                {'name': 'Malicious', 'value': 8, 'color': '#EF4444'}
+            ]
+        elif total_detections > 4:
+            threat_dist = [
+                {'name': 'Normal', 'value': 78, 'color': '#10B981'},
+                {'name': 'Suspicious', 'value': 17, 'color': '#F59E0B'},
+                {'name': 'Malicious', 'value': 5, 'color': '#EF4444'}
+            ]
+        else:
+            threat_dist = [
+                {'name': 'Normal', 'value': 87, 'color': '#10B981'},
+                {'name': 'Suspicious', 'value': 10, 'color': '#F59E0B'},
+                {'name': 'Malicious', 'value': 3, 'color': '#EF4444'}
+            ]
+
         return {
-            'total_attacks_detected': random.randint(15, 45),
-            'attack_types': {
-                'dos_attacks': random.randint(5, 15),
-                'mitm_attempts': random.randint(2, 8),
-                'unauthorized_access': random.randint(1, 5),
-                'data_manipulation': random.randint(3, 12)
+            'threat_level': random.choice(['Low', 'Medium', 'High']),
+            'confidence_score': confidence,
+            'attack_types': attack_types_list,  # Use the correctly formatted array
+            'threat_distribution': threat_dist,
+            'model_metrics': {  # Add the missing model_metrics key
+                'accuracy': round(confidence - random.uniform(0, 2), 1),
+                'precision': round(confidence - random.uniform(1, 3), 1),
+                'recall': round(confidence - random.uniform(2, 4), 1),
+                'f1Score': round(confidence - random.uniform(1.5, 3.5), 1)
             },
-            'risk_level': random.choice(['low', 'medium', 'high']),
-            'last_attack': (datetime.now() - timedelta(hours=random.randint(1, 24))).isoformat(),
-            'most_targeted_system': random.choice(['Water Pump System', 'PLC Network', 'SCADA Interface']),
-            'note': 'Simulated data for demonstration'
+            'dataset_info': {
+                'type': 'WADI',
+                'attacks_available': True
+            }
         }
     
     def _get_statistics(self):
