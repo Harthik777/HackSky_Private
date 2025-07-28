@@ -118,75 +118,115 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
     
     def _get_power_data(self):
-        """Generate simulated power consumption data"""
-        current_time = datetime.now()
+        """Generate simulated power consumption data - matches frontend expectations"""
+        base_time = datetime.now() - timedelta(minutes=30)
         data = []
         
-        for i in range(24):  # Last 24 hours
-            timestamp = current_time - timedelta(hours=23-i)
-            power_value = 100 + random.uniform(-20, 40) + (10 * (i % 8))  # Simulate daily pattern
+        for i in range(10):
+            time_point = base_time + timedelta(minutes=i*3)
             
+            # Water distribution system baseline (600-800 kW typical)
+            normal_power = 700 + random.uniform(-50, 50)
+            
+            # Add daily demand patterns
+            hour = time_point.hour
+            if 6 <= hour <= 10 or 18 <= hour <= 22:  # Peak water demand
+                normal_power += 100
+            elif 0 <= hour <= 5:  # Low demand overnight
+                normal_power -= 80
+            
+            # Simulate cyber attack anomalies
+            anomaly_power = None
+            if random.random() > 0.88:  # 12% chance
+                anomaly_power = normal_power + random.uniform(100, 200)
+                
             data.append({
-                'time': timestamp.strftime('%H:%M'),
-                'timestamp': timestamp.isoformat(),
-                'power': round(power_value, 2),
-                'status': 'normal' if power_value < 140 else 'high'
+                'time': time_point.strftime('%H:%M'),
+                'power': round(normal_power + random.uniform(-15, 15)),
+                'normal': round(normal_power),
+                'anomaly': round(anomaly_power) if anomaly_power else None
             })
         
         return data
     
     def _get_system_status(self):
-        """Generate simulated system status"""
-        systems = [
-            'water_pump_1', 'water_pump_2', 'booster_pump', 
-            'plc_control', 'scada_hmi', 'flow_sensor_1', 
-            'pressure_sensor', 'valve_control'
-        ]
+        """Generate simulated system status - matches frontend expectations"""
+        component_statuses = ['online', 'online', 'online', 'warning']  # Mostly online
         
-        status_data = {}
-        for system in systems:
-            status_data[system] = {
-                'status': random.choice(['online', 'online', 'online', 'warning']),  # Mostly online
-                'power': round(80 + random.uniform(-30, 50), 2),
-                'anomaly': random.choice([False, False, False, True]),  # Occasional anomalies
-                'last_update': datetime.now().isoformat()
-            }
-        
-        return status_data
+        return {
+            'overall': random.choice(['good', 'good', 'warning']),  # Mostly good
+            'components': {
+                'nilm': random.choice(component_statuses),
+                'ml_models': random.choice(component_statuses),
+                'data_collection': random.choice(component_statuses),
+                'alert_system': random.choice(component_statuses)
+            },
+            'dataset_type': 'Simulated'
+        }
     
     def _get_alerts(self):
-        """Generate simulated security alerts"""
-        alert_types = ['security', 'anomaly', 'system', 'network']
-        systems = ['Water Pump 1', 'PLC Controller', 'SCADA HMI', 'Network Gateway']
+        """Generate simulated security alerts - matches frontend expectations"""
+        alert_types = ['critical', 'warning', 'info']
+        systems = ['Water Distribution', 'Sensor Network', 'Treatment Plant', 'Control System']
+        messages = [
+            'Unusual power spike detected on Water Pump #2',
+            'Flow sensor FIT_301 showing irregular patterns', 
+            'Scheduled maintenance completed on UV disinfection system',
+            'Network latency increased on PLC-001',
+            'Pressure anomaly detected in distribution line',
+            'Sensor calibration required for AIT_201'
+        ]
         
         alerts = []
-        for i in range(random.randint(2, 6)):
-            alert_time = datetime.now() - timedelta(minutes=random.randint(1, 1440))
+        for i in range(random.randint(2, 5)):
+            alert_time = datetime.now() - timedelta(minutes=random.randint(1, 720))
             alerts.append({
-                'id': f'alert_{1000 + i}',
+                'id': 1000 + i,  # Frontend expects numeric ID
                 'type': random.choice(alert_types),
-                'system': random.choice(systems),
-                'message': f'Simulated alert for {random.choice(systems)}',
-                'severity': random.choice(['low', 'medium', 'high']),
+                'message': random.choice(messages),
                 'timestamp': alert_time.isoformat(),
-                'time': alert_time.strftime('%H:%M:%S')
+                'system': random.choice(systems)
             })
         
         return sorted(alerts, key=lambda x: x['timestamp'], reverse=True)
     
     def _get_attack_analysis(self):
-        """Generate simulated attack analysis with the correct format for frontend"""
+        """Generate simulated attack analysis with dynamic behavior - matches frontend expectations"""
         
-        # Create an array of attack type objects, as the frontend expects
-        attack_types_list = [
-            {'type': 'Flow Manipulation', 'probability': random.randint(10, 25), 'detected': random.randint(0, 5)},
-            {'type': 'Pressure Attack', 'probability': random.randint(5, 20), 'detected': random.randint(0, 3)},
-            {'type': 'Level Sensor Spoofing', 'probability': random.randint(5, 15), 'detected': random.randint(0, 2)},
-            {'type': 'Pump Control Attack', 'probability': random.randint(10, 30), 'detected': random.randint(0, 4)},
-            {'type': 'Quality Tampering', 'probability': random.randint(1, 10), 'detected': random.randint(0, 1)},
-            {'type': 'Network Intrusion', 'probability': random.randint(7, 18), 'detected': random.randint(0, 3)},
-            {'type': 'HMI Manipulation', 'probability': random.randint(3, 12), 'detected': random.randint(0, 2)}
+        # Use time-based variation for more realistic dynamic behavior
+        import time
+        import math
+        elapsed_minutes = (time.time() % 3600) / 60  # Reset every hour for demo
+        time_factor = math.sin(elapsed_minutes * 0.1) * 0.3 + 1
+        
+        # Create an array of attack type objects with realistic variations
+        base_attacks = [
+            {'type': 'Flow Manipulation', 'base_prob': 15},
+            {'type': 'Pressure Attack', 'base_prob': 10},
+            {'type': 'Sensor Spoofing', 'base_prob': 8},
+            {'type': 'Pump Control', 'base_prob': 12},
+            {'type': 'Data Exfiltration', 'base_prob': 5},
+            {'type': 'Network Intrusion', 'base_prob': 7},
+            {'type': 'HMI Manipulation', 'base_prob': 6}
         ]
+        
+        attack_types_list = []
+        for attack in base_attacks:
+            # Add realistic variability
+            prob_variation = random.uniform(-3, 8)
+            time_influence = attack['base_prob'] * (time_factor - 1) * 0.5
+            current_prob = max(5, min(30, attack['base_prob'] + prob_variation + time_influence))
+            
+            # Dynamic detection count based on probability
+            detection_chance = current_prob / 100 * random.uniform(0.8, 1.2)
+            detected_count = random.randint(0, 6) if random.random() < detection_chance else random.randint(0, 2)
+            
+            attack_types_list.append({
+                'type': attack['type'],
+                'probability': round(current_prob, 1),
+                'detected': detected_count
+            })
+        
         random.shuffle(attack_types_list)
 
         # Generate dynamic model metrics
@@ -213,42 +253,52 @@ class handler(BaseHTTPRequestHandler):
                 {'name': 'Malicious', 'value': 3, 'color': '#EF4444'}
             ]
 
+        # Dynamic threat level based on detections
+        total_detections = sum(attack['detected'] for attack in attack_types_list)
+        avg_probability = sum(attack['probability'] for attack in attack_types_list) / len(attack_types_list)
+        threat_score = total_detections * 3 + avg_probability
+        
+        if threat_score > 25:
+            threat_level = 'High'
+        elif threat_score > 15:
+            threat_level = 'Medium'  
+        else:
+            threat_level = 'Low'
+
         return {
-            'threat_level': random.choice(['Low', 'Medium', 'High']),
+            'threat_level': threat_level,
             'confidence_score': confidence,
-            'attack_types': attack_types_list,  # Use the correctly formatted array
+            'attack_types': attack_types_list,
             'threat_distribution': threat_dist,
-            'model_metrics': {  # Add the missing model_metrics key
+            'model_metrics': {
                 'accuracy': round(confidence - random.uniform(0, 2), 1),
                 'precision': round(confidence - random.uniform(1, 3), 1),
                 'recall': round(confidence - random.uniform(2, 4), 1),
                 'f1Score': round(confidence - random.uniform(1.5, 3.5), 1)
             },
             'dataset_info': {
-                'type': 'WADI',
+                'type': 'Simulated',
                 'attacks_available': True
             }
         }
     
     def _get_statistics(self):
-        """Generate simulated statistics"""
+        """Generate simulated statistics - matches frontend expectations"""
+        power_value = round(120 + random.uniform(-20, 30))
+        accuracy = round(random.uniform(92, 98), 1)
+        alert_count = random.randint(1, 5)
+        
         return {
-            'total_systems': 8,
-            'systems_online': random.randint(6, 8),
-            'anomalies_detected': random.randint(0, 3),
-            'power_consumption': {
-                'current': round(120 + random.uniform(-20, 30), 2),
-                'average_24h': round(115 + random.uniform(-10, 20), 2),
-                'peak_24h': round(145 + random.uniform(-5, 15), 2),
-                'unit': 'kW'
-            },
-            'network_status': {
-                'connections_active': random.randint(15, 25),
-                'bandwidth_usage': round(random.uniform(30, 85), 1),
-                'packets_per_second': random.randint(1200, 2500)
-            },
-            'security_score': round(random.uniform(75, 95), 1),
-            'uptime_percentage': round(random.uniform(95, 99.9), 2),
+            # Frontend expects these exact keys
+            'systems_monitored': random.randint(10, 15),
+            'power_consumption': f"{power_value} kW",
+            'active_alerts': alert_count,
+            'detection_accuracy': f"{accuracy}%",
+            
+            # Additional data for potential future use
+            'online_systems': random.randint(8, 12),
+            'anomaly_count': random.randint(0, 3),
+            'data_source': 'Simulated',
             'last_updated': datetime.now().isoformat()
         }
     
