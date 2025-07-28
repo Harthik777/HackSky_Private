@@ -32,44 +32,52 @@ interface AttackAnalysis {
 }
 
 const AttackDetectionPanel: React.FC = () => {
-  const [threatLevel, setThreatLevel] = useState('Low');
-  const [confidenceScore, setConfidenceScore] = useState(94.7);
-  const [threatData, setThreatData] = useState<ThreatData[]>([
-    { name: 'Normal', value: 87, color: '#10B981' },
-    { name: 'Suspicious', value: 10, color: '#F59E0B' },
+  const [threatLevel, setThreatLevel] = useState('Loading...');
+  const [confidenceScore, setConfidenceScore] = useState(0);
+  const [threatData, setThreatData] = useState([
+    { name: 'Normal', value: 85, color: '#10B981' },
+    { name: 'Suspicious', value: 12, color: '#F59E0B' },
     { name: 'Malicious', value: 3, color: '#EF4444' }
   ]);
-  const [attackTypes, setAttackTypes] = useState<AttackType[]>([
-    { type: 'DoS Attack', probability: 15, detected: 2 },
-    { type: 'Data Injection', probability: 8, detected: 0 },
-    { type: 'Command Injection', probability: 12, detected: 1 },
-    { type: 'Replay Attack', probability: 5, detected: 0 },
-    { type: 'Man-in-Middle', probability: 3, detected: 0 }
-  ]);
+  const [attackTypes, setAttackTypes] = useState<AttackType[]>([]);
   const [modelMetrics, setModelMetrics] = useState({
-    accuracy: 94.7,
-    precision: 92.3,
-    recall: 89.6,
-    f1Score: 90.9
+    accuracy: 0,
+    precision: 0,
+    recall: 0,
+    f1Score: 0
   });
-  const [datasetType, setDatasetType] = useState('Generic');
+  const [datasetType, setDatasetType] = useState('Loading...');
 
   // Fetch attack analysis data from backend
   const fetchAttackAnalysis = async () => {
     try {
+      console.log('🔍 Fetching attack analysis data...');
       const response = await fetch('/api/attack-analysis');
+      console.log('📡 API Response status:', response.status, response.ok);
+      
       if (response.ok) {
         const data: AttackAnalysis = await response.json();
-        setThreatLevel(data.threat_level || 'Low');
+        console.log('📊 Received attack analysis data:', data);
+        console.log('🎯 Attack types received:', data.attack_types);
+        
+        setThreatLevel(data.threat_level || 'Medium');
         setConfidenceScore(data.confidence_score || 94.7);
         setThreatData(data.threat_distribution || threatData);
-        setAttackTypes(data.attack_types || attackTypes);
+        setAttackTypes(data.attack_types || []);
         setModelMetrics(data.model_metrics || modelMetrics);
         setDatasetType(data.dataset_info?.type || 'Generic');
+        
+        console.log('✅ Attack types set to:', data.attack_types);
+      } else {
+        console.error('❌ API response not ok:', response.status, response.statusText);
       }
     } catch (error) {
-      console.error('Failed to fetch attack analysis:', error);
-      // Continue with default values if API fails
+      console.error('💥 Failed to fetch attack analysis:', error);
+      // Set default values if API fails
+      setThreatLevel('Medium');
+      setAttackTypes([
+        { type: 'API Connection Failed', probability: 0, detected: 0 }
+      ]);
     }
   };
 

@@ -4,27 +4,13 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  css: {
-    postcss: './postcss.config.js',
-  },
   server: {
-    port: 5173,
-    host: true,
     proxy: {
+      // This forwards any request starting with /api to your backend server
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
-        secure: false,
-      }
+      },
     }
   },
-  preview: {
-    port: 4173,
-    host: true
-  },
-  build: {
-    outDir: 'dist',
-    sourcemap: false,
-    minify: 'esbuild'
-  }
 })
