@@ -14,7 +14,7 @@ class WADIDataConnector:
     """Specialized connector for WADI (Water Distribution) dataset"""
     
     def __init__(self):
-        self.dataset_path = 'data/wadi/'
+        self.dataset_path = '../data/wadi/'
         self.scaler = StandardScaler()
         self.anomaly_detector = IsolationForest(contamination=0.1, random_state=42)
         self.sensor_mapping = self.get_wadi_sensor_mapping()

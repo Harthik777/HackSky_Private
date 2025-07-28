@@ -4,6 +4,7 @@ node_modules/
 
 # Large datasets (>100MB)
 ics-dashboard/data/wadi/*.csv
+data/wadi/*.csv
 WADI_14days_new.csv
 WADI_attackdataLABLE.csv
 
