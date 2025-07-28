@@ -6,18 +6,26 @@ import AnomalyAlerts from './components/AnomalyAlerts';
 import AttackDetectionPanel from './components/AttackDetectionPanel';
 import StatisticsCards from './components/StatisticsCards';
 
+interface Alert {
+  id: number;
+  type: 'critical' | 'warning' | 'info';
+  message: string;
+  timestamp: Date;
+  system: string;
+}
+
 function App() {
-  const [alerts, setAlerts] = useState([
+  const [alerts, setAlerts] = useState<Alert[]>([
     {
       id: 1,
-      type: 'critical',
+      type: 'critical' as const,
       message: 'Unusual power spike detected on Motor Controller #3',
       timestamp: new Date(),
       system: 'Motor Control Unit'
     },
     {
       id: 2,
-      type: 'warning',
+      type: 'warning' as const,
       message: 'Network latency increased on PLC-001',
       timestamp: new Date(Date.now() - 300000),
       system: 'PLC Network'
@@ -50,10 +58,18 @@ function App() {
             <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg">
               <Settings className="w-5 h-5" />
             </button>
-            <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg relative">
+            <button 
+              onClick={() => {
+                setAlerts([]);
+                // Add a subtle feedback for demo purposes
+                console.log('🔔 Alerts cleared!');
+              }}
+              className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg relative transition-colors"
+              title={alerts.length > 0 ? 'Clear all alerts' : 'No new alerts'}
+            >
               <Bell className="w-5 h-5" />
               {alerts.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
                   {alerts.length}
                 </span>
               )}
