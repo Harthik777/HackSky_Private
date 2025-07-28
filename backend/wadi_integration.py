@@ -15,8 +15,8 @@ class WADIDataConnector:
     """Specialized connector for WADI (Water Distribution) dataset"""
     
     def __init__(self):
-        # --- FIX START: Create absolute path ---
-        script_dir = os.path.dirname(__file__)
+        # --- FIX: Correct path resolution for WADI dataset ---
+        script_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.abspath(os.path.join(script_dir, '..'))
         self.dataset_path = os.path.join(project_root, 'data', 'wadi/')
         # --- FIX END ---
@@ -41,7 +41,7 @@ class WADIDataConnector:
         else:
             print("⚠️ WADI integration disabled - no dataset found")
             print(f"   📁 Expected path: {self.dataset_path}/")
-    
+
     def get_wadi_sensor_mapping(self):
         """Map WADI sensor codes to readable names"""
         return {
