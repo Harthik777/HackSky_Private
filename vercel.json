@@ -5,14 +5,14 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "functions": {
-    "backend/server.py": {
-      "runtime": "python3.9"
+    "api/index.py": {
+      "runtime": "python3.12"
     }
   },
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/backend/server.py"
+      "destination": "/api/index.py"
     }
   ],
   "headers": [
