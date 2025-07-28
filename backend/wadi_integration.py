@@ -1,12 +1,13 @@
 """
-WADI Dataset Integration for ICS Cybersecurity Dashboard
-Singapore University of Technology and Design (SUTD) Water Distribution Dataset
+WADI Water Distribution Dataset Integration
+For ICS Cybersecurity Dashboard - Team 0verr1de
 """
 
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
 import os
+from datetime import datetime, timedelta
+import random
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import IsolationForest
 
@@ -24,6 +25,23 @@ class WADIDataConnector:
         self.sensor_mapping = self.get_wadi_sensor_mapping()
         self.attack_labels = {}
         
+        # Add caching to avoid reloading 784k records every time
+        self._cached_normal_data = None
+        self._cached_attack_data = None
+        self._cache_timestamp = None
+        self._cache_expiry_minutes = 30  # Cache for 30 minutes
+        
+        # Test if WADI dataset is available
+        self.available = self.test_wadi_connection()
+        if self.available:
+            print("✅ WADI (Water Distribution) integration enabled")
+            print(f"   📁 Place WADI files in: {self.dataset_path}/")
+            print("   📄 Required files: WADI_14days.csv, WADI_attackdata.csv")
+            print("   🌐 Download from: https://itrust.sutd.edu.sg/itrust-labs_datasets/")
+        else:
+            print("⚠️ WADI integration disabled - no dataset found")
+            print(f"   📁 Expected path: {self.dataset_path}/")
+    
     def get_wadi_sensor_mapping(self):
         """Map WADI sensor codes to readable names"""
         return {
@@ -74,15 +92,41 @@ class WADIDataConnector:
             'P_205': 'Backwash Pump'
         }
     
-    def load_wadi_data(self, attack_type='normal'):
-        """Load WADI dataset files"""
+    def test_wadi_connection(self):
+        """Test if WADI dataset files are available"""
+        normal_file = os.path.join(self.dataset_path, 'WADI_14days.csv')
+        attack_file = os.path.join(self.dataset_path, 'WADI_attackdata.csv')
+        return os.path.exists(normal_file) or os.path.exists(attack_file)
+    
+    def _is_cache_valid(self):
+        """Check if cached data is still valid"""
+        if self._cache_timestamp is None:
+            return False
+        
+        cache_age = datetime.now() - self._cache_timestamp
+        return cache_age.total_seconds() < (self._cache_expiry_minutes * 60)
+    
+    def load_wadi_data(self, data_type='normal'):
+        """Load WADI dataset with caching to avoid reloading 784k records every time"""
+        
+        # Check cache first
+        if data_type == 'normal' and self._cached_normal_data is not None and self._is_cache_valid():
+            print("📋 Using cached WADI normal data")
+            return self._cached_normal_data
+        
+        if data_type == 'attack' and self._cached_attack_data is not None and self._is_cache_valid():
+            print("📋 Using cached WADI attack data") 
+            return self._cached_attack_data
+        
         try:
-            if attack_type == 'normal':
+            if data_type == 'normal':
                 # Load normal operation data
                 normal_file = os.path.join(self.dataset_path, 'WADI_14days.csv')
                 if os.path.exists(normal_file):
                     df = pd.read_csv(normal_file)
                     print(f"✅ Loaded WADI normal data: {len(df)} records")
+                    self._cached_normal_data = df
+                    self._cache_timestamp = datetime.now()
                     return self.process_wadi_dataframe(df, has_attacks=False)
             else:
                 # Load attack data
@@ -90,6 +134,8 @@ class WADIDataConnector:
                 if os.path.exists(attack_file):
                     df = pd.read_csv(attack_file)
                     print(f"✅ Loaded WADI attack data: {len(df)} records")
+                    self._cached_attack_data = df
+                    self._cache_timestamp = datetime.now()
                     return self.process_wadi_dataframe(df, has_attacks=True)
                     
         except Exception as e:
