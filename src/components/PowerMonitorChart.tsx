@@ -3,40 +3,35 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Activity, TrendingUp } from 'lucide-react';
 
 const PowerMonitorChart: React.FC = () => {
-  const [data, setData] = useState([
-    { time: '10:00', power: 820, normal: 850, anomaly: null },
-    { time: '10:05', power: 832, normal: 855, anomaly: null },
-    { time: '10:10', power: 845, normal: 860, anomaly: null },
-    { time: '10:15', power: 867, normal: 862, anomaly: null },
-    { time: '10:20', power: 923, normal: 865, anomaly: 923 }, // Anomaly detected
-    { time: '10:25', power: 889, normal: 868, anomaly: null },
-    { time: '10:30', power: 851, normal: 870, anomaly: null },
-    { time: '10:35', power: 847, normal: 872, anomaly: null },
-    { time: '10:40', power: 863, normal: 875, anomaly: null },
-    { time: '10:45', power: 871, normal: 878, anomaly: null },
-  ]);
+  const [data, setData] = useState<any[]>([]);
+  const [currentPower, setCurrentPower] = useState(0);
+  const [isConnected, setIsConnected] = useState(false);
 
-  const [currentPower, setCurrentPower] = useState(871);
-
-  // Simulate real-time data updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const newPower = 850 + Math.random() * 50 + (Math.random() > 0.9 ? 80 : 0); // Occasional spike
-      setCurrentPower(Math.round(newPower));
+  // Fetch real data from backend API
+  const fetchPowerData = async () => {
+    try {
+      const response = await fetch('/api/power-data');
+      const realData = await response.json();
       
-      setData(prevData => {
-        const newTime = new Date();
-        const timeString = `${newTime.getHours()}:${newTime.getMinutes().toString().padStart(2, '0')}`;
-        
-        const newDataPoint = {
-          time: timeString,
-          power: Math.round(newPower),
-          normal: 880,
-          anomaly: newPower > 920 ? Math.round(newPower) : null
-        };
-        
-        return [...prevData.slice(1), newDataPoint];
-      });
+      if (realData && realData.length > 0) {
+        setData(realData);
+        setCurrentPower(realData[realData.length - 1]?.power || 0);
+        setIsConnected(true);
+      }
+    } catch (error) {
+      console.error('Error fetching real data:', error);
+      setIsConnected(false);
+    }
+  };
+
+  // Real-time data updates from backend
+  useEffect(() => {
+    // Initial fetch
+    fetchPowerData();
+    
+    // Set up interval for real-time updates
+    const interval = setInterval(() => {
+      fetchPowerData();
     }, 3000);
 
     return () => clearInterval(interval);
@@ -137,9 +132,11 @@ const PowerMonitorChart: React.FC = () => {
             <span className="text-gray-300 text-sm">Anomalies</span>
           </div>
         </div>
-        <div className="flex items-center space-x-2 text-green-400">
+        <div className={`flex items-center space-x-2 ${isConnected ? 'text-green-400' : 'text-yellow-400'}`}>
           <TrendingUp className="w-4 h-4" />
-          <span className="text-sm">System Operating Normally</span>
+          <span className="text-sm">
+            {isConnected ? '📊 Using Real Data' : '⚠️ Simulated Data'}
+          </span>
         </div>
       </div>
     </div>
