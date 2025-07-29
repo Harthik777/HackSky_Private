@@ -93,13 +93,13 @@ Navigate to `http://localhost:5173` to see the live monitoring dashboard in acti
 
 ## 🔮 **Future Work: The Path to a Fully Autonomous Architecture**
 
-This project serves as a robust proof-of-concept for the core NILM-based detection engine. Our future roadmap is designed to address the full scope of the next-generation ICS security challenge:
+This project serves as a robust proof-of-concept for our core detection engine. Our future roadmap is designed to evolve this system into a state-of-the-art, self-defending architecture:
 
-### **1. Autonomous Response & Self-Healing** 🤖
-Evolve the system from detection to response by building an **autonomous response mechanism**. This would enable the system to automatically trigger **device quarantine protocols**—such as isolating a compromised PLC or safely shutting down a malfunctioning motor—and use the NILM baseline data to verify a successful and safe recovery.
+### **1. Integrate Advanced Deep Learning Models** 🧠
+The immediate next step is to enhance our detection capabilities by implementing sophisticated time-series models. We have already benchmarked approaches including **1D-CNNs** for pattern recognition in power signatures and **LSTMs** for sequence-based anomaly detection. Our ultimate goal is to integrate a **Time-Series Transformer (BERT-style) model** to understand the complex "language" of the power grid and predict multi-stage attacks.
 
-### **2. Stateful, Multi-Stage Attack Detection** 🎯  
-To counter persistent threats, we will enhance the detection engine to be **stateful**. This will allow it to correlate low-confidence anomalies over time to identify the subtle patterns of a **multi-stage attack**, rather than just isolated events.
+### **2. Autonomous Response & Self-Healing** 🤖
+Evolve the system from detection to response by building an **autonomous response mechanism**. This would enable the system to automatically trigger **device quarantine protocols**—such as isolating a compromised PLC—and use the NILM baseline data to verify a successful and safe recovery.
 
 ### **3. Zero-Trust and Post-Quantum Integration** 🔐
 To secure the system itself, our roadmap includes integrating a **Zero-Trust framework**, where the power signature of a device serves as a continuous, real-time authentication factor. The integrity of this data stream would be secured using **post-quantum cryptographic algorithms** to protect against future threats.
