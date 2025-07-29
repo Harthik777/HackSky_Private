@@ -419,10 +419,16 @@ def get_statistics():
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
+    # More descriptive data source for the frontend
+    data_source_display = 'Real Industrial Data (WADI)' if monitor.dataset_type == 'WADI' \
+        else 'Real CSV Data' if monitor.dataset_type == 'Generic CSV' \
+        else 'Simulated Data'
+
     return jsonify({
         'status': 'healthy', 
         'timestamp': datetime.now().isoformat(),
         'data_source': monitor.dataset_type,
+        'data_source_display': data_source_display,  # <-- ADD THIS
         'wadi_available': wadi_data_available,
         'generic_data_available': real_data_available,
         'version': '2.0.0'

@@ -36,6 +36,7 @@ function App() {
       alert_system: 'loading'
     }
   });
+  const [dataSourceDisplay, setDataSourceDisplay] = useState('Loading...');
 
   // Fetch initial data on component mount
   useEffect(() => {
@@ -72,6 +73,18 @@ function App() {
       } catch (error) {
         console.error("Failed to fetch system status:", error);
       }
+
+      // Fetch Health Status for Data Source Display
+      try {
+        const healthResponse = await fetch('/api/health');
+        if (healthResponse.ok) {
+          const healthData = await healthResponse.json();
+          setDataSourceDisplay(healthData.data_source_display || 'Simulated Data');
+        }
+      } catch (error) {
+        console.error("Failed to fetch health status:", error);
+        setDataSourceDisplay('Simulated Data');
+      }
     };
 
     fetchInitialData();
@@ -86,7 +99,15 @@ function App() {
             <Shield className="w-8 h-8 text-cyber-400" />
             <div>
               <h1 className="text-2xl font-bold text-white">0verr1de ICS Security</h1>
-              <p className="text-gray-400 text-sm">Non-Intrusive Load Monitoring System</p>
+              <div className="flex items-center space-x-2">
+                <p className="text-gray-400 text-sm">Non-Intrusive Load Monitoring System</p>
+                {/* NEW DATA SOURCE INDICATOR */}
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                  dataSourceDisplay.includes('Real') ? 'bg-green-900 text-green-300' : 'bg-yellow-900 text-yellow-300'
+                }`}>
+                  {dataSourceDisplay}
+                </span>
+              </div>
             </div>
           </div>
           <div className="flex items-center space-x-4">
