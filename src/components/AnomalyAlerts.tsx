@@ -99,6 +99,24 @@ const AnomalyAlerts: React.FC<AnomalyAlertsProps> = ({ alerts, setAlerts }) => {
                         <Clock className="w-4 h-4" />
                         <span>{formatTimeAgo(alert.timestamp)}</span>
                       </div>
+                      
+                      {/* NEW SIMULATION BUTTON */}
+                      {alert.type === 'critical' && (
+                        <button
+                          onClick={(e) => {
+                            const button = e.currentTarget;
+                            button.innerText = 'Responding...';
+                            button.disabled = true;
+                            setTimeout(() => {
+                              button.innerText = 'Device Quarantined';
+                              button.classList.add('text-green-400');
+                            }, 2000);
+                          }}
+                          className="text-cyber-400 hover:text-cyber-300 font-medium px-2 py-1 rounded-md border border-cyber-400 hover:bg-cyber-900 transition-all text-xs"
+                        >
+                          ⚡ Initiate Autonomous Response
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
