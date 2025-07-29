@@ -208,12 +208,17 @@ class DatabaseService:
                     attack_summary[attack_type] = {
                         'count': 0,
                         'avg_confidence': 0,
-                        'threat_levels': {'Low': 0, 'Medium': 0, 'High': 0}
+                        'threat_levels': {}
                     }
                 
                 attack_summary[attack_type]['count'] += 1
                 attack_summary[attack_type]['avg_confidence'] += detection.confidence
-                attack_summary[attack_type]['threat_levels'][detection.threat_level] += 1
+                
+                # Handle flexible threat levels
+                threat_level = detection.threat_level or 'Medium'
+                if threat_level not in attack_summary[attack_type]['threat_levels']:
+                    attack_summary[attack_type]['threat_levels'][threat_level] = 0
+                attack_summary[attack_type]['threat_levels'][threat_level] += 1
                 
                 total_detections += 1
                 if detection.confidence > 85:

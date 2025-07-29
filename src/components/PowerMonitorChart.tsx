@@ -9,12 +9,24 @@ const PowerMonitorChart: React.FC = () => {
 
   const fetchData = async () => {
     try {
+      console.log('🔄 Fetching power data...');
       // Fetch power data
       const powerResponse = await fetch('/api/power-data');
+      console.log('📊 Power response status:', powerResponse.status);
+      
+      if (!powerResponse.ok) {
+        throw new Error(`HTTP error! status: ${powerResponse.status}`);
+      }
+      
       const powerData = await powerResponse.json();
-      if (powerData && powerData.length > 0) {
-        setData(powerData);
-        setCurrentPower(powerData[powerData.length - 1]?.power || 0);
+      console.log('📊 Power data received:', powerData?.data?.length || 0, 'items');
+      
+      if (powerData && powerData.data && powerData.data.length > 0) {
+        setData(powerData.data);
+        setCurrentPower(powerData.data[powerData.data.length - 1]?.power || 0);
+        console.log('✅ Data set successfully, latest power:', powerData.data[powerData.data.length - 1]?.power);
+      } else {
+        console.log('⚠️ No power data received or empty array');
       }
 
       // Fetch data source info
@@ -23,7 +35,7 @@ const PowerMonitorChart: React.FC = () => {
       setDataSource(sourceData.dataset_type || 'Simulated');
 
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('❌ Error fetching data:', error);
       setDataSource('Simulated');
     }
   };
