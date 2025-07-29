@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Shield, AlertTriangle, Activity, Zap, Settings, Bell, TrendingUp, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Shield, Settings, Bell } from 'lucide-react';
 import PowerMonitorChart from './components/PowerMonitorChart';
 import SystemStatus from './components/SystemStatus';
 import AnomalyAlerts from './components/AnomalyAlerts';
@@ -14,10 +14,20 @@ interface Alert {
   system: string;
 }
 
+interface SystemHealth {
+  overall: string;
+  components: {
+    nilm: string;
+    ml_models: string;
+    data_collection: string;
+    alert_system: string;
+  };
+}
+
 function App() {
   // Initialize with empty or loading states
   const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [systemHealth, setSystemHealth] = useState({
+  const [systemHealth, setSystemHealth] = useState<SystemHealth>({
     overall: 'loading',
     components: {
       nilm: 'loading',
@@ -33,13 +43,18 @@ function App() {
       // Fetch Alerts
       try {
         const alertsResponse = await fetch('/api/alerts');
+        if (!alertsResponse.ok) {
+          throw new Error(`HTTP error! status: ${alertsResponse.status}`);
+        }
         const alertsData = await alertsResponse.json();
         // Convert timestamp strings to Date objects
-        const formattedAlerts = alertsData.map((alert: any) => ({
-          ...alert,
-          timestamp: new Date(alert.timestamp)
-        }));
-        setAlerts(formattedAlerts);
+        if (Array.isArray(alertsData)) {
+          const formattedAlerts = alertsData.map((alert: Omit<Alert, 'timestamp'> & { timestamp: string }) => ({
+            ...alert,
+            timestamp: new Date(alert.timestamp)
+          }));
+          setAlerts(formattedAlerts);
+        }
       } catch (error) {
         console.error("Failed to fetch alerts:", error);
       }
@@ -47,8 +62,13 @@ function App() {
       // Fetch System Status
       try {
         const statusResponse = await fetch('/api/system-status');
+        if (!statusResponse.ok) {
+          throw new Error(`HTTP error! status: ${statusResponse.status}`);
+        }
         const statusData = await statusResponse.json();
-        setSystemHealth(statusData);
+        if (statusData && typeof statusData === 'object') {
+          setSystemHealth(statusData);
+        }
       } catch (error) {
         console.error("Failed to fetch system status:", error);
       }
