@@ -1,7 +1,14 @@
-# 🏭 Next-Gen ICS Cybersecurity Architecture
-## *Autonomous Threat Detection for Hyper-Connected Industrial Systems*
+# 🏭 HackSky: Enterprise-Grade ICS Cybersecurity Platform
+## *Real-Time Threat Detection with MySQL Database Architecture*
 
-A next-generation cybersecurity architecture designed for hyper-connected Industrial Control Systems (ICS) operating under extreme constraints. This system provides autonomous threat detection and analysis without relying on labeled data or cloud access, making it ideal for isolated and mission-critical environments.
+**HackSky** is a professional-grade cybersecurity platform for Industrial Control Systems (ICS) with enterprise-level MySQL database integration. This system provides real-time threat detection, anomaly analysis, and comprehensive monitoring for critical industrial infrastructure.
+
+### 🚀 **Version 3.0 - Database-Powered Architecture**
+- ✅ **MySQL Database Integration** - Scalable, real-time data storage
+- ✅ **Professional Backend** - SQLAlchemy ORM with connection pooling
+- ✅ **Enterprise Features** - Alert management, device tracking, audit trails
+- ✅ **Production Ready** - Docker deployment, automated setup scripts
+- ✅ **High Performance** - Optimized queries, bulk operations, caching
 
 ---
 
@@ -91,18 +98,167 @@ Navigate to `http://localhost:5173` to see the live monitoring dashboard in acti
 
 ---
 
-## 🔮 **Future Work: The Path to a Fully Autonomous Architecture**
+## 🗄️ **Enterprise Database Architecture**
 
-This project serves as a robust proof-of-concept for our core detection engine. Our future roadmap is designed to evolve this system into a state-of-the-art, self-defending architecture:
+HackSky now features a **professional MySQL database backend** that replaces CSV-based data handling with enterprise-grade data management:
 
-### **1. Integrate Advanced Deep Learning Models** 🧠
-The immediate next step is to enhance our detection capabilities by implementing sophisticated time-series models. We have already benchmarked approaches including **1D-CNNs** for pattern recognition in power signatures and **LSTMs** for sequence-based anomaly detection. Our ultimate goal is to integrate a **Time-Series Transformer (BERT-style) model** to understand the complex "language" of the power grid and predict multi-stage attacks.
+### **Database Tables & Schema**
+```sql
+devices              # Device registry and metadata
+├── id (PK)
+├── device_id_str    # Unique device identifier
+├── device_name      # Human-readable name
+├── device_type      # pump, sensor, controller, etc.
+├── location         # Physical location
+└── status           # online, offline, warning, error
 
-### **2. Autonomous Response & Self-Healing** 🤖
-Evolve the system from detection to response by building an **autonomous response mechanism**. This would enable the system to automatically trigger **device quarantine protocols**—such as isolating a compromised PLC—and use the NILM baseline data to verify a successful and safe recovery.
+power_readings       # Time-series power consumption data
+├── id (PK)
+├── timestamp        # High-precision timestamps
+├── power_consumption # Real-time power data
+├── voltage/current   # Electrical parameters
+├── is_anomaly       # ML-detected anomalies
+├── anomaly_score    # Confidence scoring
+└── device_id (FK)   # Links to devices table
 
-### **3. Zero-Trust and Post-Quantum Integration** 🔐
-To secure the system itself, our roadmap includes integrating a **Zero-Trust framework**, where the power signature of a device serves as a continuous, real-time authentication factor. The integrity of this data stream would be secured using **post-quantum cryptographic algorithms** to protect against future threats.
+alerts               # Alert management system
+├── id (PK)
+├── alert_type       # critical, warning, info
+├── severity         # low, medium, high, critical
+├── title/message    # Alert details
+├── acknowledged     # Workflow management
+├── device_id (FK)   # Related device
+└── timestamps       # Created, acknowledged, resolved
+
+attack_detections    # Cybersecurity threat analysis
+├── id (PK)
+├── attack_type      # Flow manipulation, data exfiltration, etc.
+├── confidence       # ML confidence score
+├── threat_level     # Low, Medium, High
+├── source_ip        # Network forensics
+├── indicators       # JSON threat indicators
+└── mitigation_data  # Response actions
+
+system_metrics       # Performance and health metrics
+├── id (PK)
+├── metric_name      # total_power, uptime, latency, etc.
+├── metric_value     # Numerical values
+├── unit            # kW, %, ms, count
+└── category        # power, security, performance
+```
+
+### **Key Database Features**
+- **🔄 Real-time Data Ingestion** - Millisecond precision timestamps
+- **📊 Advanced Analytics** - Aggregated queries for dashboard statistics
+- **🚨 Alert Workflow** - Complete alert lifecycle management
+- **🔍 Audit Trail** - Full historical data retention
+- **⚡ High Performance** - Connection pooling, bulk operations
+- **🛡️ Data Integrity** - Transaction safety, foreign key constraints
+- **📈 Scalability** - Designed for millions of readings per day
+
+---
+
+## 🚀 **Quick Start Guide**
+
+### **Option 1: Automated Setup (Recommended)**
+```powershell
+# Clone the repository
+git clone https://github.com/Harthik777/HackSky_Private.git
+cd HackSky_Private/HackSky
+
+# Run the automated setup script
+.\setup_hacksky_database.ps1
+```
+
+### **Option 2: Docker Compose**
+```powershell
+# Start MySQL database and phpMyAdmin
+docker-compose up -d
+
+# Install Python dependencies
+cd backend
+pip install -r requirements.txt
+
+# Initialize database with sample data
+python setup_database.py
+
+# Start the backend server
+python server_v2.py
+```
+
+### **Option 3: Manual Setup**
+See detailed instructions in [`DATABASE_SETUP.md`](DATABASE_SETUP.md)
+
+---
+
+## 📊 **API Endpoints & Integration**
+
+### **Core Data APIs**
+```http
+GET  /api/power-data           # Real-time power consumption
+GET  /api/system-status        # Device health and status
+GET  /api/alerts               # Alert management
+POST /api/alerts               # Create new alerts
+GET  /api/attack-analysis      # Cybersecurity analysis
+GET  /api/statistics           # Dashboard metrics
+GET  /api/devices              # Device inventory
+```
+
+### **Database Management APIs**
+```http
+GET  /api/health               # System health check
+GET  /api/database/status      # Database statistics
+POST /api/database/init        # Reset/initialize database
+```
+
+### **Integration Examples**
+```javascript
+// Frontend integration example
+const response = await fetch('/api/power-data?minutes=60&limit=100');
+const data = await response.json();
+
+// Real-time power monitoring
+data.data.forEach(reading => {
+    console.log(`${reading.time}: ${reading.power}kW 
+                 ${reading.anomaly ? '[ANOMALY]' : '[NORMAL]'}`);
+});
+```
+
+---
+
+## 🛠️ **Development & Management**
+
+### **Database Access**
+- **phpMyAdmin**: http://localhost:8080
+- **API Health**: http://localhost:5000/api/health  
+- **Database Status**: http://localhost:5000/api/database/status
+
+### **Management Commands**
+```powershell
+# Reset database (careful - deletes all data!)
+python setup_database.py --reset
+
+# Re-import sample data
+cd backend && python ingest_data.py
+
+# Start/stop Docker services
+docker-compose up -d mysql phpmyadmin
+docker-compose down
+
+# Check database performance
+curl http://localhost:5000/api/database/status
+```
+
+### **Environment Configuration**
+```env
+# .env file configuration
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=hacksky
+DB_PASSWORD=mysecretpassword
+DB_NAME=ics_monitoring
+FLASK_ENV=development
+```
 
 ---
 

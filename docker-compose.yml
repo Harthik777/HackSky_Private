@@ -1,0 +1,45 @@
+# docker-compose.yml
+# Complete MySQL database setup for HackSky
+
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: hacksky-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: ics_monitoring
+      MYSQL_USER: hacksky
+      MYSQL_PASSWORD: mysecretpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password
+    restart: unless-stopped
+    networks:
+      - hacksky-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: hacksky-phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: hacksky
+      PMA_PASSWORD: mysecretpassword
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql
+    networks:
+      - hacksky-network
+
+volumes:
+  mysql_data:
+
+networks:
+  hacksky-network:
+    driver: bridge
