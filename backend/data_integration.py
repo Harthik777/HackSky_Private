@@ -40,7 +40,7 @@ class RealDataConnector:
         # Example: Connect to Modbus RTU/TCP devices
         try:
             # Install: pip install pymodbus
-            from pymodbus.client.sync import ModbusTcpClient
+            from pymodbus.client import ModbusTcpClient
             
             if modbus_config:
                 client = ModbusTcpClient(
@@ -56,7 +56,7 @@ class RealDataConnector:
                         unit=modbus_config.get('unit_id', 1)
                     )
                     
-                    if not result.isError():
+                    if not result.is_error():
                         return self.process_modbus_data(result.registers)
                         
                 client.close()
