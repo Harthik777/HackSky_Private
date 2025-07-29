@@ -8,10 +8,8 @@ services:
     image: mysql:8.0
     container_name: hacksky-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_ROOT_PASSWORD: mysecretpassword
       MYSQL_DATABASE: ics_monitoring
-      MYSQL_USER: hacksky
-      MYSQL_PASSWORD: mysecretpassword
     ports:
       - "3306:3306"
     volumes:
@@ -27,9 +25,9 @@ services:
     container_name: hacksky-phpmyadmin
     environment:
       PMA_HOST: mysql
-      PMA_USER: hacksky
+      PMA_USER: root
       PMA_PASSWORD: mysecretpassword
-      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_ROOT_PASSWORD: mysecretpassword
     ports:
       - "8080:80"
     depends_on:

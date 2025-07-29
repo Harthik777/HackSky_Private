@@ -9,7 +9,7 @@ class Device(Base):
     __tablename__ = "devices"
     
     id = Column(Integer, primary_key=True, index=True)
-    device_id_str = Column(String(100), unique=True, index=True, nullable=False)  # e.g., 'motor_controller_1'
+    device_id_str = Column(String(255), unique=True, index=True, nullable=False)  # MySQL requires String length
     device_name = Column(String(200), nullable=True)  # Human-readable name
     device_type = Column(String(100), nullable=True)  # 'pump', 'sensor', 'controller', etc.
     location = Column(String(200), nullable=True)
@@ -48,7 +48,7 @@ class Alert(Base):
     alert_type = Column(String(50), nullable=False)  # 'critical', 'warning', 'info'
     severity = Column(String(20), default='medium')  # 'low', 'medium', 'high', 'critical'
     title = Column(String(200), nullable=False)
-    message = Column(Text, nullable=False)
+    message = Column(String(1024), nullable=False)  # MySQL limit for message length
     system = Column(String(100), nullable=True)  # Related system component
     acknowledged = Column(Boolean, default=False)
     acknowledged_by = Column(String(100), nullable=True)
@@ -71,10 +71,10 @@ class AttackDetection(Base):
     threat_level = Column(String(20), nullable=False)  # 'Low', 'Medium', 'High'
     source_ip = Column(String(45), nullable=True)  # IPv4 or IPv6
     target_system = Column(String(100), nullable=True)
-    description = Column(Text, nullable=True)
-    indicators = Column(Text, nullable=True)  # JSON string of indicators
+    description = Column(String(1024), nullable=True)  # MySQL String limit
+    indicators = Column(String(2048), nullable=True)  # JSON string of indicators (limited for MySQL)
     mitigated = Column(Boolean, default=False)
-    mitigation_action = Column(Text, nullable=True)
+    mitigation_action = Column(String(1024), nullable=True)
     device_id = Column(Integer, ForeignKey("devices.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 

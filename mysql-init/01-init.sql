@@ -7,10 +7,10 @@ CREATE DATABASE IF NOT EXISTS ics_monitoring;
 -- Use the database
 USE ics_monitoring;
 
--- Grant all privileges to the hacksky user
-GRANT ALL PRIVILEGES ON ics_monitoring.* TO 'hacksky'@'%';
-FLUSH PRIVILEGES;
-
--- Optional: Create some initial configuration
+-- Set timezone and SQL mode
 SET time_zone = '+00:00';
 SET sql_mode = 'NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';
+
+-- Grant root user access from any host
+GRANT ALL PRIVILEGES ON ics_monitoring.* TO 'root'@'%';
+FLUSH PRIVILEGES;

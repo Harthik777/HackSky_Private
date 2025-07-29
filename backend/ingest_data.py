@@ -84,6 +84,10 @@ def ingest_sample_data():
                 
                 for _, row in chunk.iterrows():
                     if row['device_id'] in device_map:
+                        # Handle potential NaN values from CSV (as requested)
+                        voltage = float(row['voltage']) if pd.notna(row['voltage']) else None
+                        current = float(row['current']) if pd.notna(row['current']) else None
+                        
                         # Add some realistic anomaly detection
                         is_anomaly = row['power_consumption'] > 150 or random.random() < 0.05
                         anomaly_score = random.uniform(0.8, 1.0) if is_anomaly else random.uniform(0.0, 0.3)
@@ -91,8 +95,8 @@ def ingest_sample_data():
                         reading = PowerReading(
                             timestamp=row['timestamp'],
                             power_consumption=row['power_consumption'],
-                            voltage=row.get('voltage'),
-                            current=row.get('current'),
+                            voltage=voltage,
+                            current=current,
                             temperature=random.uniform(20, 35) if random.random() > 0.3 else None,
                             humidity=random.uniform(40, 80) if random.random() > 0.3 else None,
                             is_anomaly=is_anomaly,

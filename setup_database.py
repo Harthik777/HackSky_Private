@@ -44,6 +44,7 @@ def setup_database():
     print("\n🔌 Step 2: Database Connection Test")
     
     try:
+        # Import from the backend directory (now in path)
         from database import engine, DATABASE_URL
         
         # Test connection
@@ -57,6 +58,7 @@ def setup_database():
         print("\n💡 Make sure MySQL is running:")
         print("   - With Docker: docker-compose up -d mysql")
         print("   - Local MySQL: Check service is running and credentials are correct")
+        print("   - Install dependencies: pip install mysqlclient SQLAlchemy")
         return False
     
     # Step 3: Create database schema
