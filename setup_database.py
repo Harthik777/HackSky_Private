@@ -38,201 +38,166 @@ def import_backend_modules():
             modules['database'] = database
         except ImportError as e:
             print(f"❌ Failed to import database module: {e}")
-            raise
+            return None
             
         try:
             import models
             modules['models'] = models
         except ImportError as e:
             print(f"❌ Failed to import models module: {e}")
-            raise
+            return None
             
         try:
             import ingest_data
             modules['ingest_data'] = ingest_data
         except ImportError as e:
             print(f"❌ Failed to import ingest_data module: {e}")
-            raise
-            
-        try:
-            import database_service
-            modules['database_service'] = database_service
-        except ImportError as e:
-            print(f"❌ Failed to import database_service module: {e}")
-            raise
+            return None
             
         return modules
         
-    except ImportError as e:
-        print("💡 Troubleshooting tips:")
-        print("   1. Make sure you're running this script from the project root directory")
-        print("   2. Install required dependencies: pip install -r backend/requirements.txt")
-        print("   3. Check that all backend files exist:")
-        backend_files = ['database.py', 'models.py', 'ingest_data.py', 'database_service.py']
-        for file in backend_files:
-            file_path = Path(__file__).parent / 'backend' / file
-            status = "✅" if file_path.exists() else "❌"
-            print(f"      {status} backend/{file}")
+    except Exception as e:
+        print(f"❌ Unexpected error during import: {e}")
         return None
 
-# Setup imports
-original_cwd = setup_imports()
-
-def setup_database():
-    """Complete database setup process"""
-    
-    print("🚀 HackSky Database Setup Starting...")
-    print("=" * 50)
-    
-    # Import backend modules
-    modules = import_backend_modules()
-    if not modules:
-        return False
-    
-    database = modules['database']
-    ingest_data = modules['ingest_data']
-    database_service = modules['database_service']
-    
-    # Step 1: Check environment
-    print("\n📋 Step 1: Environment Check")
-    
-    # Check if .env file exists
-    env_file = Path('.env')
-    if not env_file.exists():
-        print("⚠️  .env file not found, copying from .env.example")
-        import shutil
-        shutil.copy('.env.example', '.env')
-        print("✅ Created .env file - please update database credentials if needed")
-    
-    # Load environment variables
+def test_database_connection(db_module):
+    """Test database connectivity"""
     try:
-        from dotenv import load_dotenv
-        load_dotenv()
-        print("✅ Environment variables loaded")
-    except ImportError:
-        print("⚠️  python-dotenv not installed, using default values")
-    
-    # Step 2: Test database connection
-    print("\n🔌 Step 2: Database Connection Test")
-    
-    try:
-        # Import text for SQLAlchemy 2.0
-        from sqlalchemy import text
-        
         # Test connection
-        with database.engine.connect() as conn:
-            result = conn.execute(text("SELECT 1"))
+        engine = db_module.engine
+        with engine.connect() as connection:
+            # Simple connectivity test
+            connection.execute(db_module.engine.dialect.name == 'mysql' and 'SELECT 1' or 'SELECT 1')
             print("✅ Database connection successful")
-            print(f"📊 Connected to: {database.DATABASE_URL.split('@')[1] if '@' in database.DATABASE_URL else 'localhost'}")
-            
+            return True
     except Exception as e:
         print(f"❌ Database connection failed: {e}")
-        print("\n💡 Make sure MySQL is running:")
-        print("   - With Docker: docker-compose up -d mysql")
-        print("   - Local MySQL: Check service is running and credentials are correct")
-        print("   - Install dependencies: pip install mysqlclient SQLAlchemy")
+        print("💡 Make sure MySQL is running and credentials are correct")
+        print(f"💡 Connection string: {db_module.DATABASE_URL}")
         return False
-    
-    # Step 3: Create database schema
-    print("\n🏗️  Step 3: Create Database Schema")
-    
+
+def create_tables(modules):
+    """Create all database tables"""
     try:
-        database.create_database()
+        print("🏗️ Creating database tables...")
+        modules['database'].create_database()
         print("✅ Database tables created successfully")
-        
+        return True
     except Exception as e:
-        print(f"❌ Failed to create database schema: {e}")
+        print(f"❌ Failed to create tables: {e}")
         return False
-    
-    # Step 4: Ingest sample data
-    print("\n📊 Step 4: Data Ingestion")
-    
+
+def ingest_sample_data(modules):
+    """Ingest sample data into the database"""
     try:
-        ingest_data.ingest_sample_data()
+        print("📊 Ingesting sample data...")
+        modules['ingest_data'].ingest_sample_data()
         print("✅ Sample data ingested successfully")
-        
+        return True
     except Exception as e:
         print(f"❌ Failed to ingest sample data: {e}")
         return False
-    
-    # Step 5: Verification
-    print("\n✅ Step 5: Setup Verification")
-    
+
+def verify_setup(modules):
+    """Verify the database setup"""
     try:
-        # Test basic operations
-        stats = database_service.db_service.get_statistics()
-        power_data = database_service.db_service.get_recent_power_data(limit=5)
-        alerts = database_service.db_service.get_alerts(limit=3)
+        print("🔍 Verifying database setup...")
+        db = modules['database'].SessionLocal()
         
-        print(f"   📊 Statistics: {stats['devices_monitored']} devices monitored")
-        print(f"   ⚡ Power Data: {len(power_data)} recent readings")
-        print(f"   🚨 Alerts: {len(alerts)} system alerts")
-        print("✅ All database operations working correctly")
+        # Check if tables exist and have data
+        device_count = db.query(modules['models'].Device).count()
+        reading_count = db.query(modules['models'].PowerReading).count()
+        alert_count = db.query(modules['models'].Alert).count()
         
+        print(f"📱 Devices: {device_count}")
+        print(f"📊 Power readings: {reading_count}")
+        print(f"🚨 Alerts: {alert_count}")
+        
+        db.close()
+        
+        if device_count > 0 and reading_count > 0:
+            print("✅ Database setup verification successful")
+            return True
+        else:
+            print("❌ Database setup verification failed - missing data")
+            return False
+            
     except Exception as e:
         print(f"❌ Verification failed: {e}")
         return False
-    
-    # Success summary
-    print("\n" + "=" * 50)
-    print("🎉 HackSky Database Setup Complete!")
-    print("\n📝 Next Steps:")
-    print("   1. Start the backend server:")
-    print("      cd backend && python server_v2.py")
-    print("   2. Access the API at: http://localhost:5000")
-    print("   3. View database in phpMyAdmin: http://localhost:8080")
-    print("   4. Check API health: http://localhost:5000/api/health")
-    print("\n🛠️  Development Commands:")
-    print("   - Reset database: python setup_database.py --reset")
-    print("   - Add sample data: python backend/ingest_data.py")
-    print("   - Start MySQL: docker-compose up -d mysql")
-    print("\n🔗 Frontend Integration:")
-    print("   - Update API calls to use new endpoints")
-    print("   - All existing endpoints are compatible")
-    print("   - New features: /api/devices, /api/database/status")
-    
-    return True
 
-def reset_database():
-    """Reset the database (drop and recreate all tables)"""
-    print("⚠️  Resetting database - this will delete all data!")
-    confirm = input("Are you sure? Type 'yes' to continue: ")
-    
-    if confirm.lower() != 'yes':
-        print("❌ Database reset cancelled")
-        return
-    
-    # Import backend modules
-    modules = import_backend_modules()
-    if not modules:
-        return
-    
-    database = modules['database']
-    models = modules['models']
-    ingest_data = modules['ingest_data']
-    
+def reset_database(modules):
+    """Reset the database (drop all tables and recreate)"""
     try:
-        print("🗑️ Dropping all tables...")
-        models.Base.metadata.drop_all(bind=database.engine)
-        
-        print("🏗️ Creating fresh tables...")
-        models.Base.metadata.create_all(bind=database.engine)
-        
-        print("📊 Adding fresh sample data...")
-        ingest_data.ingest_sample_data()
-        
-        print("✅ Database reset complete!")
-        
+        print("🗑️ Resetting database...")
+        modules['models'].Base.metadata.drop_all(bind=modules['database'].engine)
+        print("✅ Database reset complete")
+        return True
     except Exception as e:
-        print(f"❌ Database reset failed: {e}")
+        print(f"❌ Failed to reset database: {e}")
+        return False
 
 def main():
     """Main setup function"""
+    print("🚀 HackSky Database Setup Script")
+    print("=" * 50)
     
-    if len(sys.argv) > 1 and sys.argv[1] == '--reset':
-        reset_database()
-    else:
-        setup_database()
+    # Handle command line arguments
+    import argparse
+    parser = argparse.ArgumentParser(description='Setup HackSky database')
+    parser.add_argument('--reset', action='store_true', help='Reset database before setup')
+    parser.add_argument('--verify', action='store_true', help='Only verify existing setup')
+    args = parser.parse_args()
+    
+    # Setup imports
+    original_cwd = setup_imports()
+    
+    try:
+        # Import backend modules
+        modules = import_backend_modules()
+        if not modules:
+            return False
+        
+        # Test database connection
+        if not test_database_connection(modules['database']):
+            return False
+        
+        # Handle verification only
+        if args.verify:
+            return verify_setup(modules)
+        
+        # Handle reset
+        if args.reset:
+            if not reset_database(modules):
+                return False
+        
+        # Create tables
+        if not create_tables(modules):
+            return False
+        
+        # Ingest sample data
+        if not ingest_sample_data(modules):
+            return False
+        
+        # Verify setup
+        if not verify_setup(modules):
+            return False
+        
+        print("=" * 50)
+        print("🎉 Database setup completed successfully!")
+        print("🚀 You can now run the backend server:")
+        print("   cd backend && python server.py")
+        
+        return True
+        
+    except Exception as e:
+        print(f"❌ Setup failed with unexpected error: {e}")
+        return False
+    
+    finally:
+        # Restore original working directory
+        os.chdir(original_cwd)
 
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    success = main()
+    sys.exit(0 if success else 1)
