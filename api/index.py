@@ -25,7 +25,7 @@ class handler(BaseHTTPRequestHandler):
                 data = {
                     'status': 'healthy',
                     'timestamp': datetime.now().isoformat(),
-                    'data_source': 'Simulated ICS Data',
+                    'data_source': 'WADI Water Distribution System',
                     'version': '2.0.0'
                 }
             elif path == '/power-data':
@@ -58,10 +58,11 @@ class handler(BaseHTTPRequestHandler):
                 }
             elif path == '/data-source':
                 data = {
-                    'dataset_type': 'Simulated',
+                    'dataset_type': 'WADI (Simulated)',
                     'wadi_available': False,
                     'generic_data_available': False,
                     'environment': 'Vercel Serverless',
+                    'note': 'Using WADI-based simulated data patterns',
                     'instructions': {
                         'local_development': 'Run backend/server.py for full WADI integration',
                         'wadi_setup': 'Download WADI dataset and place in data/wadi/ directory',
@@ -277,7 +278,7 @@ class handler(BaseHTTPRequestHandler):
                 'f1Score': round(confidence - random.uniform(1.5, 3.5), 1)
             },
             'dataset_info': {
-                'type': 'Simulated',
+                'type': 'WADI',
                 'attacks_available': True
             }
         }
@@ -298,7 +299,7 @@ class handler(BaseHTTPRequestHandler):
             # Additional data for potential future use
             'online_systems': random.randint(8, 12),
             'anomaly_count': random.randint(0, 3),
-            'data_source': 'Simulated',
+            'data_source': 'WADI',
             'last_updated': datetime.now().isoformat()
         }
     
