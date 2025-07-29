@@ -9,7 +9,7 @@ USE ics_monitoring;
 
 -- Set timezone and SQL mode
 SET time_zone = '+00:00';
-SET sql_mode = 'NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';
+SET sql_mode = 'NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 
 -- Grant root user access from any host
 GRANT ALL PRIVILEGES ON ics_monitoring.* TO 'root'@'%';

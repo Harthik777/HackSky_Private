@@ -346,9 +346,9 @@ if __name__ == '__main__':
     
     # Database configuration info
     print("📊 Database Configuration:")
-    print(f"   Host: {os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '3306')}")
+    print(f"   Host: {os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '3307')}")
     print(f"   Database: {os.getenv('DB_NAME', 'ics_monitoring')}")
-    print(f"   User: {os.getenv('DB_USER', 'hacksky')}")
+    print(f"   User: {os.getenv('DB_USER', 'root')}")
     print()
     
     print("🛠️  Available Endpoints:")

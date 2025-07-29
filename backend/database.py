@@ -4,15 +4,19 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
 
+# Import PyMySQL to register the MySQL driver
+import pymysql
+pymysql.install_as_MySQLdb()
+
 # Database configuration
 DATABASE_USER = os.getenv("DB_USER", "root")
 DATABASE_PASSWORD = os.getenv("DB_PASSWORD", "mysecretpassword")
 DATABASE_HOST = os.getenv("DB_HOST", "localhost")
-DATABASE_PORT = os.getenv("DB_PORT", "3306")
+DATABASE_PORT = os.getenv("DB_PORT", "3307")
 DATABASE_NAME = os.getenv("DB_NAME", "ics_monitoring")
 
-# MySQL connection string using mysqlclient (as requested)
-DATABASE_URL = f"mysql+mysqlclient://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
+# MySQL connection string using PyMySQL (more reliable on Windows)
+DATABASE_URL = f"mysql+pymysql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
 
 # Create engine with connection pooling
 engine = create_engine(

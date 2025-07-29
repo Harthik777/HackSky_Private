@@ -11,15 +11,87 @@ import os
 import sys
 from pathlib import Path
 
-# Add the backend directory to the Python path
-backend_dir = Path(__file__).parent / 'backend'
-sys.path.insert(0, str(backend_dir))
+def setup_imports():
+    """Setup proper imports for backend modules"""
+    # Get the current script directory
+    script_dir = Path(__file__).parent.resolve()
+    backend_dir = script_dir / 'backend'
+    
+    # Add backend directory to Python path
+    if str(backend_dir) not in sys.path:
+        sys.path.insert(0, str(backend_dir))
+    
+    # Change to script directory to ensure relative imports work
+    original_cwd = os.getcwd()
+    os.chdir(script_dir)
+    
+    return original_cwd
+
+def import_backend_modules():
+    """Import all required backend modules with error handling"""
+    try:
+        # Import modules one by one with better error reporting
+        modules = {}
+        
+        try:
+            import database
+            modules['database'] = database
+        except ImportError as e:
+            print(f"❌ Failed to import database module: {e}")
+            raise
+            
+        try:
+            import models
+            modules['models'] = models
+        except ImportError as e:
+            print(f"❌ Failed to import models module: {e}")
+            raise
+            
+        try:
+            import ingest_data
+            modules['ingest_data'] = ingest_data
+        except ImportError as e:
+            print(f"❌ Failed to import ingest_data module: {e}")
+            raise
+            
+        try:
+            import database_service
+            modules['database_service'] = database_service
+        except ImportError as e:
+            print(f"❌ Failed to import database_service module: {e}")
+            raise
+            
+        return modules
+        
+    except ImportError as e:
+        print("💡 Troubleshooting tips:")
+        print("   1. Make sure you're running this script from the project root directory")
+        print("   2. Install required dependencies: pip install -r backend/requirements.txt")
+        print("   3. Check that all backend files exist:")
+        backend_files = ['database.py', 'models.py', 'ingest_data.py', 'database_service.py']
+        for file in backend_files:
+            file_path = Path(__file__).parent / 'backend' / file
+            status = "✅" if file_path.exists() else "❌"
+            print(f"      {status} backend/{file}")
+        return None
+
+# Setup imports
+original_cwd = setup_imports()
 
 def setup_database():
     """Complete database setup process"""
     
     print("🚀 HackSky Database Setup Starting...")
     print("=" * 50)
+    
+    # Import backend modules
+    modules = import_backend_modules()
+    if not modules:
+        return False
+    
+    database = modules['database']
+    ingest_data = modules['ingest_data']
+    database_service = modules['database_service']
     
     # Step 1: Check environment
     print("\n📋 Step 1: Environment Check")
@@ -44,14 +116,14 @@ def setup_database():
     print("\n🔌 Step 2: Database Connection Test")
     
     try:
-        # Import from the backend directory (now in path)
-        from database import engine, DATABASE_URL
+        # Import text for SQLAlchemy 2.0
+        from sqlalchemy import text
         
         # Test connection
-        with engine.connect() as conn:
-            result = conn.execute("SELECT 1")
+        with database.engine.connect() as conn:
+            result = conn.execute(text("SELECT 1"))
             print("✅ Database connection successful")
-            print(f"📊 Connected to: {DATABASE_URL.split('@')[1] if '@' in DATABASE_URL else 'localhost'}")
+            print(f"📊 Connected to: {database.DATABASE_URL.split('@')[1] if '@' in database.DATABASE_URL else 'localhost'}")
             
     except Exception as e:
         print(f"❌ Database connection failed: {e}")
@@ -65,8 +137,7 @@ def setup_database():
     print("\n🏗️  Step 3: Create Database Schema")
     
     try:
-        from database import create_database
-        create_database()
+        database.create_database()
         print("✅ Database tables created successfully")
         
     except Exception as e:
@@ -77,8 +148,7 @@ def setup_database():
     print("\n📊 Step 4: Data Ingestion")
     
     try:
-        from ingest_data import ingest_sample_data
-        ingest_sample_data()
+        ingest_data.ingest_sample_data()
         print("✅ Sample data ingested successfully")
         
     except Exception as e:
@@ -89,12 +159,10 @@ def setup_database():
     print("\n✅ Step 5: Setup Verification")
     
     try:
-        from database_service import db_service
-        
         # Test basic operations
-        stats = db_service.get_statistics()
-        power_data = db_service.get_recent_power_data(limit=5)
-        alerts = db_service.get_alerts(limit=3)
+        stats = database_service.db_service.get_statistics()
+        power_data = database_service.db_service.get_recent_power_data(limit=5)
+        alerts = database_service.db_service.get_alerts(limit=3)
         
         print(f"   📊 Statistics: {stats['devices_monitored']} devices monitored")
         print(f"   ⚡ Power Data: {len(power_data)} recent readings")
@@ -134,19 +202,24 @@ def reset_database():
         print("❌ Database reset cancelled")
         return
     
+    # Import backend modules
+    modules = import_backend_modules()
+    if not modules:
+        return
+    
+    database = modules['database']
+    models = modules['models']
+    ingest_data = modules['ingest_data']
+    
     try:
-        from database import SessionLocal, engine
-        from models import Base
-        
         print("🗑️ Dropping all tables...")
-        Base.metadata.drop_all(bind=engine)
+        models.Base.metadata.drop_all(bind=database.engine)
         
         print("🏗️ Creating fresh tables...")
-        Base.metadata.create_all(bind=engine)
+        models.Base.metadata.create_all(bind=database.engine)
         
         print("📊 Adding fresh sample data...")
-        from ingest_data import ingest_sample_data
-        ingest_sample_data()
+        ingest_data.ingest_sample_data()
         
         print("✅ Database reset complete!")
         
